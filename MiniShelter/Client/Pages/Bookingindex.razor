@@ -1,0 +1,132 @@
+﻿@page "/booking"
+@using MiniShelter.Shared;
+@inject HttpClient Http;
+@inject NavigationManager NavigationManager
+
+<h1>Se Bookinger</h1>
+<hr class="dashed">
+<EditForm EditContext="@EditContext" class="row p-3"
+          OnValidSubmit="@HandleValidSubmit"
+          OnInvalidSubmit="@HandleInvalidSubmit">
+    <DataAnnotationsValidator />
+    <div class="col-md-12 mb-3">
+        <label for="navn" <span style="font-weight:bold">Navn*</span></label>
+        <InputText id="navn" @bind-Value="booking.navn" class="form-control"
+                   ParsingErrorMessage="Dette felt skal udfyldes" />
+        <ValidationMessage For="@(() => booking.navn)" />
+    </div>
+    <div class="col-md-6 mb-3">
+        <label for="telefonnummer"<span style="font-weight:bold">Telefonnummer</span></label>
+        <InputNumber id="telefonnummer" @bind-Value="booking.telefonnummer" class="form-control" />
+        <ValidationMessage For="@(() => booking.telefonnummer)" />
+    </div>
+    <div class="col-md-6 mb-3">
+        <label for="Email"<span style="font-weight:bold">Email*</span></label>
+        <InputText id="Email" @bind-Value="booking.email" class="form-control"
+                   ParsingErrorMessage="Dette felt skal udfyldes" />
+        <ValidationMessage For="@(() => booking.email)" />
+    </div>
+    <div class="col-md-6 mb-3">
+        <label for="PublishedStartDate"<span style="font-weight:bold">Start Dato</span></label>
+        <InputDate id="dateStart" @bind-Value="booking.dateStart" class="form-control" />
+        <ValidationMessage For="@(() => booking.dateStart)" />
+    </div>
+    <div class="col-md-6 mb-3">
+        <label for="PublisheDEndDate"<span style="font-weight:bold">Slut Dato</span></label>
+        <InputDate id="dateEnd" @bind-Value="booking.dateEnd" class="form-control" />
+        <ValidationMessage For="@(() => booking.dateEnd)" />
+    </div>
+    <div class="col-12 mb-3">
+        <button type="submit" class="btn btn-primary">Submit</button>
+
+    </div>
+    <h3 style="display: @Display">@BookingTak</h3>
+</EditForm>
+
+<div>
+    <p><strong>Shelter Navn:</strong> @shelter.Navn</p>
+    <p><strong>Shelter Kommune:</strong> @shelter.Cvr_navn</p>
+    <p><strong>Antal Pladser:</strong> @shelter.Antal_pl</p>
+    <p><strong>Shelter Faciliteter:</strong> @shelter.Facil_ty</p>
+    <p><strong>Shelter Beskrivelse:</strong> @shelter.Lang_beskr</p>
+    <p><strong>Handicap faciliteter:</strong> @shelter.Handicap</p>
+</div>
+
+<div style="width: 100%">
+    <iframe width="100%"
+            height="500"
+            frameborder="0" style="border:0"
+            referrerpolicy="no-referrer-when-downgrade"
+            src="@(IframeUrl)"
+            allowfullscreen>
+    </iframe>
+</div>
+
+
+
+
+@code {
+
+    private Shelter shelter = new Shelter(); // Opretter et tomt Shelter objekt
+    private Shelter[]? shelterlist = new Shelter[0]; // Opretter en tom liste af Shelter objekter
+    private Booking booking = new Booking(); // Opretter et tomt Booking objekt
+    private Booking[]? bookinglist = new Booking[0]; // Opretter en tom liste af Booking objekter
+    private EditContext EditContext; // Opretter et EditContext objekt
+
+    private string? UrlId; // Deklarerer en variabel til at holde på ID'en fra URL'en
+    private string? IframeUrl; // Deklarerer en variabel til at holde på ID'en fra URL'en
+
+    private string BookingTak = "";
+    private string Display = "none";
+
+
+    protected override void OnInitialized()
+    {
+        EditContext = new EditContext(booking); // Opretter et nyt EditContext med booking som parameter
+        GetUrlID(); // Kalder GetUrlID metoden for at få ID'en fra URL'en
+        booking.dateStart = DateTime.Now; // Sætter booking.dateStart til nuværende tidspunkt
+        booking.dateEnd = DateTime.Now; // Sætter booking.dateEnd til nuværende tidspunkt
+    }
+
+
+    public async Task HandleValidSubmit()
+    {
+        await AddBooking(); // Kalder AddBooking metoden, når submit-knappen trykkes og validering af formen er succesfuld
+        BookingTak = "Tak for din booking!";
+        Display = "block";
+    }
+
+    public void HandleInvalidSubmit()
+    {
+        Console.WriteLine("HandleInvalidSubmit Called..."); // Udskriver besked i konsollen, hvis validering af formen fejler
+    }
+
+    public async Task AddBooking()
+    {
+        booking.shelterID = UrlId; // Sætter shelterID på booking til værdien af UrlId
+        await Http.PostAsJsonAsync<Booking>("api/Booking", booking); // Sender en POST request med booking som JSON payload til API'en
+        Console.WriteLine("klient: add " + booking.navn + " " + booking.telefonnummer + " " + booking.email + " " + booking.dateStart + " " + booking.dateEnd + " " + booking.shelterID); // Udskriver informationer om den nye booking i konsollen
+        bookinglist = await Http.GetFromJsonAsync<Booking[]>("api/Booking"); // Henter en opdateret liste af Booking objekter fra API'en
+        booking = new(); // Opretter et nyt tomt Booking objekt for at rydde formen
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetUrlID();
+        shelter = await Http.GetFromJsonAsync<Shelter>($"api/Shelter/GetShelter/" + UrlId);
+
+        double? lat = shelter.Latitude;
+        double? lon = shelter.Longtitude;
+        IframeUrl = "https://www.google.com/maps/embed/v1/place?key=AIzaSyBQ3TIrYVtp7nKKHELHrRpkHywiA4drYLY&q=" + shelter.Latitude.ToString().Replace(",", ".") + "," + shelter.Longtitude.ToString().Replace(",", ".") + "&zoom=" + 18;
+    }
+
+    public void GetUrlID()
+    {
+        var uri = new Uri(NavigationManager.Uri); // Opretter et Uri objekt med URL'en fra NavigationManager
+        var queryParameters = System.Web.HttpUtility.ParseQueryString(uri.Query); // Bruger HttpUtility klassen til at parse query stringen i URL'en
+        UrlId = queryParameters.Get("id"); // Henter ID'en fra URL'en og gemmer den i UrlId variablen
+    }
+
+    
+
+}

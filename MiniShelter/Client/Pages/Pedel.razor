@@ -1,0 +1,133 @@
+﻿@page "/pedel"
+@using MiniShelter.Shared;
+@inject HttpClient Http;
+@using Microsoft.AspNetCore.Components;
+@inject NavigationManager NavigationManager;
+
+
+<h1>Shelterliste <span style="font-weight:bolder"</span></h1>
+<hr class="dashed">
+
+<div class="row">
+
+    <div class="col-md-10 heightlimit">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Shelter Id</th>
+                    <th>Navn</th>
+                    <th>Kommune</th>
+                    <th>Max Personer</th>
+                    <th>Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                    @foreach (var shelter in shelterlist)
+                    {
+                        <tr>
+                            <td>@shelter.Id</td>
+                            <td>@shelter.Navn</td>
+                            <td>@shelter.Cvr_navn</td>
+                            <td>@shelter.Antal_pl</td>
+                            <td>
+                            <button class="btn btn-primary" @onclick="() => GetSpecificBooking(shelter.Id)">Se Bookinger</button>
+                                <button class="btn btn-danger" @onclick="() => DeleteShelter(shelter.Id)">Slet</button>
+                            </td>
+                        </tr>
+                    }
+            </tbody>
+        </table>
+    </div>
+    <h1 class="mb-3 mt-3" >Bookinger</h1>
+    <button class="smol btn btn-primary" @onclick="() => GetAll()">Vis alle</button>
+    <hr class="dashed">
+
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>BookingID</th>
+                    <th>Navn</th>
+                    <th>Telefonnummer</th>
+                    <th>Email</th>
+                    <th>Ankomst</th>
+                    <th>Afgang</th>
+                    <th>ShelterId</th>
+                </tr>
+            </thead>
+            <tbody>
+                    @foreach (var booking in bookinglist)
+                    {
+                        <tr>
+                            <td>@booking.Id</td>
+                            <td>@booking.navn</td>
+                            <td>@booking.telefonnummer</td>
+                            <td>@booking.email</td>
+                            <td>@booking.dateStart</td>
+                            <td>@booking.dateEnd</td>
+                            <td>@booking.shelterID</td>
+                            <td>
+                                <button class="btn btn-danger" @onclick="() => DeleteBooking(booking.Id)">Slet</button>
+                            </td>
+                        </tr>
+                    }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private Shelter shelter = new Shelter(); // Opretter et tomt Shelter objekt
+    private Shelter[]? shelterlist = new Shelter[0]; // Opretter en tom liste af Shelter objekter
+    private Booking booking = new Booking(); // Opretter et tomt Booking objekt
+    private Booking[]? bookinglist = new Booking[0]; // Opretter en tom liste af Booking objekter
+    private EditContext EditContext; // Opretter et EditContext objekt
+
+    private string? UrlId; // Deklarerer en variabel til at holde på ID'en fra URL'en
+
+    protected override void OnInitialized()
+    {
+        EditContext = new EditContext(booking); // Opretter et nyt EditContext med booking som parameter
+        booking.dateStart = DateTime.Now; // Sætter booking.dateStart til nuværende tidspunkt
+        booking.dateEnd = DateTime.Now; // Sætter booking.dateEnd til nuværende tidspunkt
+    }
+
+    public void HandleInvalidSubmit()
+    {
+        Console.WriteLine("HandleInvalidSubmit Called..."); // Udskriver besked i konsollen, hvis validering af formen fejler
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        shelterlist = await Http.GetFromJsonAsync<Shelter[]>("api/Shelter"); // Henter en liste af Shelter objekter fra API'en
+        bookinglist = await Http.GetFromJsonAsync<Booking[]>("api/Booking"); // Henter en liste af Booking objekter fra API'en
+    }
+
+    public async Task DeleteBooking(string Id)
+    {
+        await Http.DeleteAsync($"api/Booking/{Id}"); // slet booking med det angivne Id fra serveren ved at sende en HTTP DELETE-anmodning
+        bookinglist = bookinglist.Where(i => i.Id != booking.Id).ToArray(); // fjern booking fra bookingliste på klienten, hvis dens Id matcher den slettede booking
+        bookinglist = await Http.GetFromJsonAsync<Booking[]>("api/Booking"); // opdater bookingliste på klienten ved at hente den nyeste liste fra serveren
+    }
+
+    public async Task DeleteShelter(string shelterID)
+    {
+        Console.WriteLine(shelterID); // skriv shelterID til konsollen (til brug for debugging)
+        await Http.DeleteAsync($"api/shelter/{shelterID}"); // slet shelter med det angivne shelterID fra serveren ved at sende en HTTP DELETE-anmodning
+        shelterlist = shelterlist.Where(i => i.Id != shelterID).ToArray(); // fjern shelter fra shelterliste på klienten, hvis dens Id matcher den slettede shelter
+    }
+    public async Task GetSpecificBooking(string shelterID)
+    {
+        Console.WriteLine(shelterID); // skriv shelterID til konsollen (til brug for debugging)
+        bookinglist = await Http.GetFromJsonAsync<Booking[]>("api/Booking"); // Henter en liste af Booking objekter fra API'en
+        bookinglist = bookinglist.Where(i => i.shelterID == shelterID).ToArray(); // Fjerner bookinger der ikke hører til det valgte shelter
+    }
+    public async Task GetAll()
+    {
+        bookinglist = await Http.GetFromJsonAsync<Booking[]>("api/Booking"); // Henter en liste af Booking objekter fra API'en
+    }
+
+}

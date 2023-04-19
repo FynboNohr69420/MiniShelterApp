@@ -1,0 +1,57 @@
+﻿@page "/"
+@using MiniShelter.Shared;
+@inject HttpClient Http;
+
+
+
+<div class="row">
+    <div class="col-md-8">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Shelter Id</th>
+                    <th>Navn</th>
+                    <th>Kommune</th>
+                    <th>Max Personer</th>
+                    <th>Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                    @foreach (var shelter in shelterlist)
+                    {
+                        <tr>
+                            <td>@shelter.Id</td>
+                            <td>@shelter.Navn</td>
+                            <td>@shelter.Cvr_navn</td>
+                            <td>@shelter.Antal_pl</td>
+                            <td>
+                                <a href="@($"/booking?id={shelter.Id}")"> <button class="btn btn-primary">Book</button></a></td> @* Viderestiller til booking siden, men
+                                    med det valgte shelter's ID som del af URL'en*@
+                        </tr>
+                    }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private Shelter shelter = new Shelter();
+
+    private Shelter[]? shelterlist = new Shelter[0];
+
+    private EditContext aEditContext; 
+
+
+    protected override void OnInitialized()
+    {
+        aEditContext = new EditContext(shelter);
+    }
+
+    protected override async Task OnInitializedAsync() //Asynkron method da dette er nødvendigt for at kunne bruge 'await'
+    {
+        shelterlist = await Http.GetFromJsonAsync<Shelter[]>("api/Shelter"); //Henter alle shelter fra collection'en gennem controlleren
+
+    }
+
+
+}
