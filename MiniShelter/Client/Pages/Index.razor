@@ -1,6 +1,6 @@
 ﻿@page "/"
 @using MiniShelter.Shared;
-@inject HttpClient Http;
+@using MiniShelter.Client.Services;
 
 
 
@@ -46,12 +46,11 @@
     {
         aEditContext = new EditContext(shelter);
     }
+    [Inject]
+    private IShelterService mService { get; set; }
 
-    protected override async Task OnInitializedAsync() //Asynkron method da dette er nødvendigt for at kunne bruge 'await'
+    protected override async Task OnInitializedAsync()
     {
-        shelterlist = await Http.GetFromJsonAsync<Shelter[]>("api/Shelter"); //Henter alle shelter fra collection'en gennem controlleren
-
+        shelterlist = (await mService.GetShelters()).ToArray();
     }
-
-
 }

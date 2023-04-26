@@ -1,7 +1,11 @@
-﻿namespace MiniShelter.Client.Services
+﻿using MiniShelter.Shared;
+using static System.Net.WebRequestMethods;
+
+namespace MiniShelter.Client.Services
 {
-    public class IShelterService
+    public interface IShelterService
     {
+        Task<IEnumerable<Shelter>> GetShelters();
         // Ole mener vi skal bruge dette (Se modul fra 26/04)
     }
 }
