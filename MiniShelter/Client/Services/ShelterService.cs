@@ -21,10 +21,5 @@ namespace MiniShelter.Client.Services
             return shelterlist;
         }
 
-        //protected override async Task OnInitializedAsync() //Asynkron method da dette er nødvendigt for at kunne bruge 'await'
-        //{
-        //    shelterlist = await Http.GetFromJsonAsync<Shelter[]>("api/Shelter"); //Henter alle shelter fra collection'en gennem controlleren
-
-        //}
     }
 }
